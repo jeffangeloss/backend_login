@@ -1,7 +1,21 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 app = FastAPI()
+
+# Esto es inseguro, pero lo hacemos por ahora
+origins = [
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["*"],
+    allow_headers=["*"]
+    
+)
 
 class LoginRequest(BaseModel):
     username : str = Field(..., min_length=5)

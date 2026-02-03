@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header, Depends
 from uuid import uuid4
 from pydantic import BaseModel
 
@@ -13,14 +13,30 @@ router = APIRouter(
 
 categorias = []
 
-@router.get("/")
+async def verify_token(x_token: str = Header(...)):
+    if x_token != "123456":
+        # Mecanismo de seguridad, token estático
+        # Cuando te logeas esto te lo entregan y se guarda en el localstorage
+        # Por eso, este mecanismo de seguridad es bastante básico para que sea token dinámico
+        # Cada vez que te logeas se genera un único token
+        # Y que cada vez que toques un endpoint estos serán capaces de poder identificar si este es un token valido
+    
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "msg" : "Token incorreto"
+            }
+        )
+    return x_token
+
+@router.get("/", dependencies=[Depends(verify_token)])
 async def list_categorias():
     return {
         "msg": "",
         "data": categorias
     }
 
-@router.get("/{cat_id}")
+@router.get("/{cat_id}", dependencies=[Depends(verify_token)])
 async def get_categoria(cat_id: str):
     for cat in categorias:
         if cat.id == cat_id:
@@ -34,7 +50,7 @@ async def get_categoria(cat_id: str):
     )
 
 # Objeto json que se enviará por el cuerpo de la petición
-@router.post("/")
+@router.post("/", dependencies=[Depends(verify_token)])
 async def create_categoria(categoria: Categoria):
     categoria.id = str(uuid4())
     # TO.DO: Trabajar con una base de datos
@@ -54,7 +70,7 @@ async def create_categoria(categoria: Categoria):
 # Para fines técnicos son iguales que las peticiones post
 # Técnicamente son exactamente igual, solo cambia de nombre
 # Es decir que al igual, se envía en el cuerpo de la petición
-@router.put("/")
+@router.put("/", dependencies=[Depends(verify_token)])
 async def update_categoria(categoria: Categoria): # Actualizas una categoría que ya existe
     # Buscar en la lista de categorias y encontrar esa categoria
     for cat in categorias:
@@ -72,7 +88,7 @@ async def update_categoria(categoria: Categoria): # Actualizas una categoría qu
 
 # Ahora vamos a eliminar
 # Pasar como path parameter
-@router.delete("/{categoria_id}")
+@router.delete("/{categoria_id}", dependencies=[Depends(verify_token)])
 async def delete_categoria(categoria_id: str):
     for i, cat in enumerate(categorias):
         if cat.id == categoria_id:

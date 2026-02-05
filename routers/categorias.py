@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException, Header, Depends
 from uuid import uuid4
 from pydantic import BaseModel
+from data import accesos # para dependencia circular creas data.py
+# . mismo nivel
+# .. nivel más arriba
 
 class Categoria(BaseModel):
     id : str | None = None
@@ -14,15 +17,16 @@ router = APIRouter(
 categorias = []
 
 async def verify_token(x_token: str = Header(...)):
-    if x_token != "123456":
+    if not x_token.encode("utf-8") in accesos:
         # Mecanismo de seguridad, token estático
         # Cuando te logeas esto te lo entregan y se guarda en el localstorage
         # Por eso, este mecanismo de seguridad es bastante básico para que sea token dinámico
         # Cada vez que te logeas se genera un único token
         # Y que cada vez que toques un endpoint estos serán capaces de poder identificar si este es un token valido
-    
+
+    #   investigar fecha de caducidad del token
         raise HTTPException(
-            status_code=400,
+            status_code=403,
             detail={
                 "msg" : "Token incorreto"
             }

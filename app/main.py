@@ -1,11 +1,13 @@
 import time
 import bcrypt
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from routers import categorias, videojuegos
-from data import accesos
-
+from .routers import categorias, videojuegos
+from .data import accesos
+from .database import get_db
+from sqlalchemy.orm import Session
+from .models import Usuario
 
 app = FastAPI()
 
@@ -25,34 +27,40 @@ class LoginRequest(BaseModel):
     password : str = Field(..., min_length=8)
 
 @app.post("/login")
-async def login(login_request : LoginRequest):
-    if login_request.username == "PROGRAWEB" and login_request.password == "123123123":
-    # usaremos una librería que se encarge de encriptar
-    # bcrypt    
-        hora_actual = time.time_ns()
-        # time_ns: nano segundos (int)
-        cadena_a_encriptar = f"{login_request.username}-{str(hora_actual)}"
-        cadena_hasheada = bcrypt.hashpw(
-            cadena_a_encriptar.encode("utf-8"),
-            bcrypt.gensalt())
-        # interpolación de strings, entre llaves se incrustan
-        
-        accesos[cadena_hasheada] = {
-            "ultimo_login" : time.time_ns()
-        }
-        
-        # Si pones la contraseña correspondiente te mostrará el siguiente mensaje
-        return {
-            "msg" : "Acceso concedido",
-            "token" : cadena_hasheada
-        }
-    else:
+async def login(login_request : LoginRequest, db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).filter(
+        Usuario.username == login_request.username,
+        Usuario.password == login_request.password    
+    ).first()
+    
+    if not usuario:
         raise HTTPException(
             status_code=400, 
             detail="Error en el login, credenciales incorrectas")
         # return{
         #     "msg" : "Error en login"
         # }
+    # usaremos una librería que se encarge de encriptar
+    # bcrypt    
+    hora_actual = time.time_ns()
+    # time_ns: nano segundos (int)
+    cadena_a_encriptar = f"{login_request.username}-{str(hora_actual)}"
+    cadena_hasheada = bcrypt.hashpw(
+        cadena_a_encriptar.encode("utf-8"),
+        bcrypt.gensalt()
+    )
+    # interpolación de strings, entre llaves se incrustan
+      
+    # accesos[cadena_hasheada] = {
+    #     "ultimo_login" : time.time_ns()
+    # }
+        
+    # Si pones la contraseña correspondiente te mostrará el siguiente mensaje
+    return {
+        "msg" : "Acceso concedido",
+        "token" : cadena_hasheada
+    }
+
     
 # fastapi puede crear routers para que routees las peticiones a otras entidades
 # Si separas es mucho más práctico y ordenado toda la estructura

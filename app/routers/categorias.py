@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, Depends
 from uuid import uuid4
 from pydantic import BaseModel
-from data import accesos # para dependencia circular creas data.py
+from app.data import accesos # para dependencia circular creas data.py
 # . mismo nivel
 # .. nivel más arriba
 

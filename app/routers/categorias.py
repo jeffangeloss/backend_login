@@ -1,7 +1,11 @@
+import datetime
 from fastapi import APIRouter, HTTPException, Header, Depends
 from uuid import uuid4
 from pydantic import BaseModel
-from app.data import accesos # para dependencia circular creas data.py
+from ..models import Acceso, CategoriaModel
+from ..data import accesos # para dependencia circular creas data.py
+from ..database import get_db
+from sqlalchemy.orm import Session
 # . mismo nivel
 # .. nivel más arriba
 
@@ -16,28 +20,41 @@ router = APIRouter(
 
 categorias = []
 
-async def verify_token(x_token: str = Header(...)):
-    if not x_token.encode("utf-8") in accesos:
-        # Mecanismo de seguridad, token estático
-        # Cuando te logeas esto te lo entregan y se guarda en el localstorage
-        # Por eso, este mecanismo de seguridad es bastante básico para que sea token dinámico
-        # Cada vez que te logeas se genera un único token
-        # Y que cada vez que toques un endpoint estos serán capaces de poder identificar si este es un token valido
-
-    #   investigar fecha de caducidad del token
+async def verify_token(x_token: str = Header(...), db: Session = Depends(get_db)):
+    # objeto de sqlalchemy, no es el acceso en si, es lo que precede al acceso
+    db_query = db.query(Acceso).filter(Acceso.id == x_token)
+    db_acceso = db_query.first() # por eso le pones el first
+    if not db_acceso:
+        #   investigar fecha de caducidad del token
         raise HTTPException(
             status_code=403,
             detail={
                 "msg" : "Token incorreto"
             }
         )
+    db_query.update({ # si quieres actualizarlo no tienes que tomar el desenvuelto, sino el query
+        "ultimo_login" : datetime.datetime.now()
+    })
+    db.commit()
+    db.refresh(db_acceso)
+    
     return x_token
+    
+    #   if not x_token.encode("utf-8") in accesos:
+        # Mecanismo de seguridad, token estático
+        # Cuando te logeas esto te lo entregan y se guarda en el localstorage
+        # Por eso, este mecanismo de seguridad es bastante básico para que sea token dinámico
+        # Cada vez que te logeas se genera un único token
+        # Y que cada vez que toques un endpoint estos serán capaces de poder identificar si este es un token valido
+
 
 @router.get("/", dependencies=[Depends(verify_token)])
-async def list_categorias():
+async def list_categorias(db: Session = Depends(get_db)):
+    lista = db.query(CategoriaModel).first().all()
+    
     return {
         "msg": "",
-        "data": categorias
+        "data": lista
     }
 
 @router.get("/{cat_id}", dependencies=[Depends(verify_token)])

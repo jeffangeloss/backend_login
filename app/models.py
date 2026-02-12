@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 from sqlalchemy import UUID, Column, DateTime, String
 from .database import Base
 
@@ -34,3 +34,4 @@ class CategoriaModel(Base):
         default=lambda: str(uuid.uuid4()),
         index=True
     )
+    nombre = Column(String)

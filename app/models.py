@@ -1,5 +1,5 @@
 ﻿import uuid
-from sqlalchemy import UUID, Column, DateTime, String, ForeignKey
+from sqlalchemy import UUID, Column, DateTime, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -39,9 +39,7 @@ class Acceso(Base):
         primary_key = True,
         index = True
     )
-    ultimo_login = Column(
-        DateTime
-    )
+    ultimo_login = Column(DateTime)
 # sqlalchemy se encarga de hacer todas las sentencias sql!
 class CategoriaModel(Base):
     __tablename__ = "categoria"
@@ -55,6 +53,13 @@ class CategoriaModel(Base):
     nombre = Column(String)
     videojuegos = relationship("Videojuego", back_populates="categoria")
 
+# En la tabla intermedia se podrían tener más
+videojuego_plataforma = Table(
+    "videojuego_plataforma",
+    Base.metadata,
+    Column("videojuego_id", ForeignKey("Videojuego.id"), primary_key=True),
+    Column("plataforma_id", ForeignKey("Plataforma.id"), primary_key=True)
+)
 class Videojuego(Base):
     __tablename__ = "videojuego"
     id = Column(
@@ -71,3 +76,17 @@ class Videojuego(Base):
         ForeignKey("usuario.id", unique = True)
     )
     categoria = relationship("CategoriaModel", back_populates="videojuegos")
+    plataformas = relationship("Plataforma", secondary=videojuego_plataforma, back_populates="videojuegos")
+        # Relación con plataforma mediante la tabla secundaria y se relaciona con la otra tabla con el campo videojuegos.
+    
+class Plataforma(Base):
+    __tablename__ = "plataforma"
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+        index=True
+    )
+    nombre = Column(String)
+    
+    Videojuegos = relationship("Videojuego", secondary=videojuego_plataforma, back_populates="plataformas")

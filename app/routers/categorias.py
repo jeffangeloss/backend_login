@@ -6,11 +6,7 @@ import datetime
 from ..data import accesos
 from ..database import get_db
 from ..models import Acceso, CategoriaModel
-
-
-class Categoria(BaseModel):
-    id : str | None = None
-    nombre : str
+from ..schemas import Categoria
 
 router = APIRouter(
     prefix="/categorias",

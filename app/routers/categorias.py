@@ -1,7 +1,7 @@
 ﻿from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 import datetime
 from ..data import accesos
 from ..database import get_db
@@ -36,7 +36,9 @@ async def verify_token(x_token : str = Header(...), db: Session = Depends(get_db
 
 @router.get("/", dependencies=[Depends(verify_token)])
 async def list_categorias(db: Session = Depends(get_db)):
-    lista = db.query(CategoriaModel).all()
+    lista = db.query(CategoriaModel).options(
+        selectinload(CategoriaModel.videojuegos)
+    ).all()
 
     return {
         "msg" : "",

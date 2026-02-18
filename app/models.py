@@ -26,6 +26,7 @@ class Perfil(Base):
     )
     nombre = Column(String)
     pais = Column(String)
+    direccion = Column(String) # Se creado dirección, PERO ESTO SOLO HACE EN EL BACKEND DESDE QUE YA SE TIENE LA MIGRACIÓN
     usuario_id = Column(
         String(36),
         ForeignKey("usuario.id"),
@@ -74,7 +75,7 @@ class Videojuego(Base):
     url_imagen = Column(String)
     categoria_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("usuario.id"),
+        ForeignKey("categoria.id"),
         unique = True
     )
     categoria = relationship("CategoriaModel", back_populates="videojuegos")
@@ -91,4 +92,4 @@ class Plataforma(Base):
     )
     nombre = Column(String)
     
-    Videojuegos = relationship("Videojuego", secondary=videojuego_plataforma, back_populates="plataformas")
+    videojuegos = relationship("Videojuego", secondary=videojuego_plataforma, back_populates="plataformas")

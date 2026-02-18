@@ -2,7 +2,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-CADENA_CONEXION = "postgresql://videojuegos:videojuegos@localhost:5432/bd_videojuegos"
+import os
+
+CADENA_CONEXION = os.getenv("DATABASE_URL")
+# Esto realmente es muy inseguro. En un proyecto real, esta cadena de conexión no debería estar hardcodeada, 
+# sino que debería estar en una variable de entorno o en un archivo de configuración que no se suba a github
+print(CADENA_CONEXION)
 
 engine = create_engine(CADENA_CONEXION)
 session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
